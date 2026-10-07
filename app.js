@@ -45,7 +45,9 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
-  var state = { page: 1, text: {}, images: {} };
+  var state = { page: 1, text: {}, images: {}, logo: null };  // logo: data URL, or null for the default
+  var DEFAULT_LOGO = 'assets/logos/quantum-logo.svg';
+  var PROJECT_VERSION = 1;
   var selectedImg = null;
 
   /* ---------- Text ---------- */
@@ -148,6 +150,7 @@
     var img = $('img', frame);
     img.onload = function () { applyCrop(id); };
     img.src = src;
+    if (img.complete && img.naturalWidth) applyCrop(id);
   }
 
   function initFrames() {
@@ -304,6 +307,119 @@
 
   // Hidden pages don't trigger font loads, so make sure every face is ready before printing.
   ['400 1em Barlow', '600 1em Barlow', '600 1em "Barlow Condensed"', '700 1em "Barlow Condensed"'].forEach(function (f) { document.fonts.load(f); });
+
+  /* ---------- Branding: replaceable logo ---------- */
+
+  function setLogo(dataUrl) {
+    state.logo = dataUrl || null;
+    $$('.q-logo').forEach(function (img) { img.src = state.logo || DEFAULT_LOGO; });
+  }
+
+  function readAsDataURL(blob) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(new Error('Could not read file')); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  $('#btnLogo').addEventListener('click', function () { $('#logoInput').click(); });
+  $('#logoInput').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!/^image\/(png|jpeg|svg\+xml|webp)$/.test(file.type)) return alert('Please choose a PNG, JPG, SVG or WebP logo.');
+    readAsDataURL(file).then(setLogo).catch(function (err) { alert(err.message); });
+  });
+  $('#btnLogoReset').addEventListener('click', function () { setLogo(null); });
+
+  /* ---------- Save / Load project (.quantum = JSON with embedded images) ---------- */
+
+  function srcToSaved(src) {
+    if (src.indexOf('blob:') !== 0) return Promise.resolve(src); // default asset path
+    return fetch(src).then(function (r) { return r.blob(); }).then(readAsDataURL);
+  }
+
+  function saveProject() {
+    var ids = Object.keys(state.images);
+    return Promise.all(ids.map(function (id) { return srcToSaved(state.images[id].src); })).then(function (srcs) {
+      var images = {};
+      ids.forEach(function (id, i) {
+        var c = state.images[id];
+        images[id] = { src: srcs[i], zoom: c.zoom, offsetX: c.offsetX, offsetY: c.offsetY };
+      });
+      var project = { version: PROJECT_VERSION, app: 'quantum-flyer-builder', savedAt: new Date().toISOString(), text: state.text, images: images, logo: state.logo };
+      var name = (state.text.venue || '').trim().replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'Quantum-Flyer';
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(project)], { type: 'application/json' }));
+      a.download = name + '.quantum';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }).catch(function (err) { alert('Could not save project: ' + err.message); });
+  }
+
+  var isNum = function (n) { return typeof n === 'number' && isFinite(n); };
+  var isImgSrc = function (s) { return typeof s === 'string' && (/^data:image\//.test(s) || /^assets\/images\/[\w.-]+$/.test(s)); };
+
+  // Returns an error message, or '' if the project can be applied.
+  function validateProject(p) {
+    if (!p || typeof p !== 'object' || p.app !== 'quantum-flyer-builder') return 'This is not a Quantum Flyer Builder project file.';
+    if (p.version !== PROJECT_VERSION) return 'This project was saved in an unsupported format (version ' + p.version + ').';
+    if (!p.text || typeof p.text !== 'object' || !p.images || typeof p.images !== 'object') return 'The project file is incomplete.';
+    for (var k in p.text) if (typeof p.text[k] !== 'string') return 'The project file has invalid text.';
+    for (var id in p.images) {
+      var c = p.images[id];
+      if (!c || !isImgSrc(c.src) || !isNum(c.zoom) || c.zoom < 1 || !isNum(c.offsetX) || !isNum(c.offsetY)) return 'The project file has an invalid image (' + id + ').';
+    }
+    if (p.logo !== null && p.logo !== undefined && !(typeof p.logo === 'string' && /^data:image\//.test(p.logo))) return 'The project file has an invalid logo.';
+    return '';
+  }
+
+  function savedToSrc(src) {
+    if (src.indexOf('data:') !== 0) return Promise.resolve(src);
+    return fetch(src).then(function (r) { return r.blob(); }).then(function (b) { return URL.createObjectURL(b); });
+  }
+
+  function applyProject(p) {
+    var ids = Object.keys(state.images).filter(function (id) { return p.images[id]; });
+    return Promise.all(ids.map(function (id) { return savedToSrc(p.images[id].src); })).then(function (srcs) {
+      FIELDS.forEach(function (f) {
+        var v = typeof p.text[f.id] === 'string' ? p.text[f.id] : f.value;
+        state.text[f.id] = clampText(f, v);
+        renderText(f.id);
+      });
+      Object.keys(state.images).forEach(function (id) {
+        var old = state.images[id].src;
+        if (old.indexOf('blob:') === 0) URL.revokeObjectURL(old);
+        var frame = $('.frame[data-img="' + id + '"]');
+        var i = ids.indexOf(id), c = i < 0 ? null : p.images[id];
+        state.images[id] = c ? { src: srcs[i], zoom: Math.min(3, c.zoom), offsetX: c.offsetX, offsetY: c.offsetY }
+                             : { src: frame.dataset.default, zoom: 1, offsetX: 0, offsetY: 0 };
+        setImageSrc(id, state.images[id].src);
+      });
+      setLogo(p.logo || null);
+      showPage(state.page);
+    });
+  }
+
+  $('#btnSave').addEventListener('click', saveProject);
+  $('#btnLoad').addEventListener('click', function () { $('#projectInput').click(); });
+  $('#projectInput').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    file.text().then(function (txt) {
+      var p;
+      try { p = JSON.parse(txt); } catch (err) { throw new Error('The file is not a valid project file.'); }
+      var problem = validateProject(p);
+      if (problem) throw new Error(problem);
+      return applyProject(p);
+    }).catch(function (err) { alert('Could not load project. ' + err.message); });
+  });
+
   $('#btnPrint').addEventListener('click', function () {
     document.fonts.ready.then(function () { window.print(); });
   });

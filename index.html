@@ -23,6 +23,20 @@
   </nav>
 
   <div class="ed-scroll">
+    <h3>Project</h3>
+    <div class="btn-row">
+      <button id="btnSave" class="btn">Save Project</button>
+      <button id="btnLoad" class="btn">Load Project</button>
+      <input type="file" id="projectInput" accept=".quantum,application/json" hidden>
+    </div>
+
+    <h3>Branding</h3>
+    <div class="btn-row">
+      <button id="btnLogo" class="btn">Replace Logo</button>
+      <button id="btnLogoReset" class="btn btn-ghost">Reset Logo</button>
+      <input type="file" id="logoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" hidden>
+    </div>
+
     <h3>Text</h3>
     <div id="textFields"></div>
 
@@ -51,7 +65,7 @@
     <div class="frame" data-img="p1-hero" data-label="Hero" data-default="assets/images/placeholder-01.jpg" style="left:0;top:0;width:210mm;height:240mm"></div>
     <div class="shade-top" style="height:60mm"></div>
     <div class="shade-bottom" style="top:120mm;height:120mm"></div>
-    <div class="brand" style="left:13mm;top:13mm"><img src="assets/logos/quantum-logo.svg" alt=""><div><b>QUANTUM</b><span>Live Productions</span></div></div>
+    <div class="brand" style="left:13mm;top:13mm"><img class="q-logo" src="assets/logos/quantum-logo.svg" alt=""><div><b>QUANTUM</b><span>Live Productions</span></div></div>
     <div class="venue-tag" id="venueTag" style="right:13mm;top:18mm">Quantum at <span data-field="venue"></span></div>
     <h1 class="display p1-head" style="left:13mm;bottom:52mm;width:184mm"><span data-field="p1_head"></span><span class="accent" data-field="p1_accent"></span></h1>
     <div class="caps" style="left:13mm;top:251mm" data-field="p1_caps"></div>

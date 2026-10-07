@@ -53,6 +53,7 @@ body {
 .zoom input { flex: 1; accent-color: var(--orange); }
 .btn { background: #2c2c33; color: #fff; border: 0; padding: 8px 12px; border-radius: 3px; cursor: pointer; font: 600 13px var(--text); }
 .btn-ghost { background: transparent; border: 1px solid #3a3a42; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .hint { font-size: 11.5px; color: #888; line-height: 1.4; margin: 8px 0 0; }
 .ed-print { padding: 14px 18px 18px; border-top: 1px solid #2a2a30; }
 .btn-print { width: 100%; padding: 12px; background: var(--orange); color: #000; font: 700 17px var(--display); letter-spacing: .08em; }
@@ -100,7 +101,7 @@ body {
 .pnum.on-image { color: #fff; text-shadow: 0 0 2mm rgba(0,0,0,.8); }
 
 .brand { display: flex; align-items: center; gap: 3mm; }
-.brand img { width: 13mm; }
+.brand img { width: 13mm; height: 13mm; object-fit: contain; }
 .brand b { display: block; font: 600 18pt/1 var(--display); letter-spacing: .08em; }
 .brand span { display: block; font-size: 8pt; color: #ddd; letter-spacing: .04em; }
 .venue-tag { font: 600 9pt var(--display); letter-spacing: .2em; text-transform: uppercase; color: #fff; border-left: .8mm solid var(--orange); padding-left: 3mm; max-width: 80mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
