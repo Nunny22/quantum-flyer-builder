@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quantum Flyer Builder</title>
+<link rel="preload" href="assets/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/barlow-condensed-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/barlow-condensed-700.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<aside class="editor">
+  <div class="ed-brand"><img src="assets/logos/quantum-logo.svg" alt=""> Venue Flyer Builder</div>
+
+  <nav class="ed-pages" id="pageNav">
+    <button data-goto="1" class="active">Page 1</button>
+    <button data-goto="2">Page 2</button>
+    <button data-goto="3">Page 3</button>
+    <button data-goto="4">Page 4</button>
+  </nav>
+
+  <div class="ed-scroll">
+    <h3>Text</h3>
+    <div id="textFields"></div>
+
+    <h3>Images</h3>
+    <div class="img-list" id="imgList"></div>
+    <div class="img-controls" id="imgControls" hidden>
+      <div class="img-name" id="imgName"></div>
+      <button id="btnReplace" class="btn">Replace Image</button>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+      <label class="zoom">Zoom <input type="range" id="zoom" min="1" max="3" step="0.01" value="1"></label>
+      <button id="btnReset" class="btn btn-ghost">Reset crop</button>
+      <p class="hint">Drag the photo in the preview to reposition it.</p>
+    </div>
+  </div>
+
+  <div class="ed-print">
+    <button id="btnPrint" class="btn btn-print">PRINT / SAVE PDF</button>
+    <p class="hint">For best results use Chrome → Save as PDF → A4 → Margins None → Background graphics On.</p>
+  </div>
+</aside>
+
+<main class="preview" id="preview">
+
+  <!-- PAGE 1 — IMPACT -->
+  <section class="page" data-page="1">
+    <div class="frame" data-img="p1-hero" data-label="Hero" data-default="assets/images/placeholder-01.jpg" style="left:0;top:0;width:210mm;height:240mm"></div>
+    <div class="shade-top" style="height:60mm"></div>
+    <div class="shade-bottom" style="top:120mm;height:120mm"></div>
+    <div class="brand" style="left:13mm;top:13mm"><img src="assets/logos/quantum-logo.svg" alt=""><div><b>QUANTUM</b><span>Live Productions</span></div></div>
+    <div class="venue-tag" id="venueTag" style="right:13mm;top:18mm">Quantum at <span data-field="venue"></span></div>
+    <h1 class="display p1-head" style="left:13mm;bottom:52mm;width:184mm"><span data-field="p1_head"></span><span class="accent" data-field="p1_accent"></span></h1>
+    <div class="caps" style="left:13mm;top:251mm" data-field="p1_caps"></div>
+    <div class="rule" style="left:13mm;top:261mm"></div>
+    <div class="small" style="left:13mm;top:266mm;width:120mm" data-field="p1_tag"></div>
+    <div class="pnum">01</div>
+  </section>
+
+  <!-- PAGE 2 — CAPABILITY -->
+  <section class="page" data-page="2">
+    <div class="frame" data-img="p2-head" data-label="Header" data-default="assets/images/placeholder-02.jpg" style="left:0;top:0;width:210mm;height:76mm"></div>
+    <div class="shade-left" style="top:0;height:76mm"></div>
+    <div class="shade-bottom" style="top:36mm;height:40mm"></div>
+    <div class="eyebrow" style="left:12mm;top:14mm" data-field="p2_eyebrow"></div>
+    <h2 class="display p2-head" style="left:12mm;top:20mm;width:150mm" data-field="p2_head"></h2>
+    <p class="body" style="left:12mm;top:52mm;width:105mm" data-field="p2_intro"></p>
+
+    <div class="frame" data-img="p2-lighting" data-label="Lighting" data-default="assets/images/placeholder-03.jpg" style="left:12mm;top:80mm;width:104mm;height:56mm"></div>
+    <div class="cap-item" style="left:12mm;top:137.5mm;width:104mm"><b>Lighting</b><span data-field="s_lighting"></span></div>
+    <div class="frame" data-img="p2-video" data-label="Video" data-default="assets/images/placeholder-04.jpg" style="left:12mm;top:154mm;width:104mm;height:40mm"></div>
+    <div class="cap-item" style="left:12mm;top:195.5mm;width:104mm"><b>Video</b><span data-field="s_video"></span></div>
+    <div class="frame" data-img="p2-power" data-label="Power" data-default="assets/images/placeholder-05.jpg" style="left:12mm;top:212mm;width:104mm;height:53mm"></div>
+    <div class="cap-item" style="left:12mm;top:266.5mm;width:104mm"><b>Power</b><span data-field="s_power"></span></div>
+
+    <div class="frame" data-img="p2-sound" data-label="Sound" data-default="assets/images/placeholder-06.jpg" style="left:121mm;top:80mm;width:77mm;height:40mm"></div>
+    <div class="cap-item" style="left:121mm;top:121.5mm;width:77mm"><b>Sound</b><span data-field="s_sound"></span></div>
+    <div class="frame" data-img="p2-staging" data-label="Staging" data-default="assets/images/placeholder-07.jpg" style="left:121mm;top:138mm;width:77mm;height:56mm"></div>
+    <div class="cap-item" style="left:121mm;top:195.5mm;width:77mm"><b>Staging</b><span data-field="s_staging"></span></div>
+    <div class="frame" data-img="p2-people" data-label="People / Production" data-default="assets/images/placeholder-08.jpg" style="left:121mm;top:212mm;width:77mm;height:53mm"></div>
+    <div class="cap-item" style="left:121mm;top:266.5mm;width:77mm"><b>People / Production</b><span data-field="s_production"></span></div>
+    <div class="pnum">02</div>
+  </section>
+
+  <!-- PAGE 3 — VENUE SHOWCASE -->
+  <section class="page" data-page="3">
+    <div class="eyebrow" style="left:12mm;top:13mm" data-field="p3_eyebrow"></div>
+    <h2 class="display p3-head" style="left:12mm;top:19mm;width:186mm" data-field="p3_head"></h2>
+    <p class="body" style="left:12mm;top:49mm;width:130mm" data-field="p3_intro"></p>
+    <div class="frame" data-img="p3-1" data-label="Large landscape" data-default="assets/images/placeholder-09.jpg" style="left:0;top:64mm;width:210mm;height:92mm"></div>
+    <div class="frame" data-img="p3-2" data-label="Middle left" data-default="assets/images/placeholder-10.jpg" style="left:0;top:158mm;width:66mm;height:52mm"></div>
+    <div class="frame" data-img="p3-3" data-label="Middle centre" data-default="assets/images/placeholder-11.jpg" style="left:68mm;top:158mm;width:84mm;height:52mm"></div>
+    <div class="frame" data-img="p3-4" data-label="Middle right" data-default="assets/images/placeholder-12.jpg" style="left:154mm;top:158mm;width:56mm;height:52mm"></div>
+    <div class="frame" data-img="p3-5" data-label="Bottom large" data-default="assets/images/placeholder-13.jpg" style="left:0;top:212mm;width:118mm;height:85mm"></div>
+    <div class="frame" data-img="p3-6" data-label="Bottom detail top" data-default="assets/images/placeholder-14.jpg" style="left:120mm;top:212mm;width:44mm;height:41.5mm"></div>
+    <div class="frame" data-img="p3-7" data-label="Bottom detail lower" data-default="assets/images/placeholder-15.jpg" style="left:120mm;top:255.5mm;width:44mm;height:41.5mm"></div>
+    <div class="frame" data-img="p3-8" data-label="Bottom right tall" data-default="assets/images/placeholder-16.jpg" style="left:166mm;top:212mm;width:44mm;height:85mm"></div>
+    <div class="pnum on-image">03</div>
+  </section>
+
+  <!-- PAGE 4 — CLIENTS / EVENTS / CONTACT -->
+  <section class="page" data-page="4">
+    <div class="eyebrow" style="left:14mm;top:14mm" data-field="p4_eyebrow"></div>
+    <div class="clients" style="left:14mm;top:21mm;width:182mm">
+      <span data-field="client1"></span><span data-field="client2"></span><span data-field="client3"></span>
+      <span data-field="client4"></span><span data-field="client5"></span><span data-field="client6"></span>
+    </div>
+    <ul class="events" style="left:14mm;top:82mm;width:82mm" data-list="p4_events"></ul>
+    <div class="frame" data-img="p4-a" data-label="Right top" data-default="assets/images/placeholder-17.jpg" style="left:102mm;top:82mm;width:96mm;height:62mm"></div>
+    <div class="frame" data-img="p4-b" data-label="Right lower" data-default="assets/images/placeholder-18.jpg" style="left:102mm;top:147mm;width:96mm;height:63mm"></div>
+    <div class="frame" data-img="p4-c" data-label="Left lower" data-default="assets/images/placeholder-19.jpg" style="left:14mm;top:159mm;width:82mm;height:51mm"></div>
+    <h2 class="display p4-close" style="left:14mm;top:222mm;width:150mm" data-field="p4_close"></h2>
+    <p class="body" style="left:14mm;top:248mm;width:150mm" data-field="p4_copy"></p>
+    <div class="qr" style="left:174mm;top:222mm">QR</div>
+    <div class="contact-line" style="left:14mm;top:266mm;width:182mm"><b>Quantum Live Productions</b><span data-field="web"></span><span data-field="phone"></span><span data-field="email"></span></div>
+    <div class="rule" style="left:14mm;top:277mm"></div>
+    <div class="pnum">04</div>
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
