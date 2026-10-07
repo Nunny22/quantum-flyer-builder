@@ -53,6 +53,11 @@ body {
 .zoom input { flex: 1; accent-color: var(--orange); }
 .btn { background: #2c2c33; color: #fff; border: 0; padding: 8px 12px; border-radius: 3px; cursor: pointer; font: 600 13px var(--text); }
 .btn-ghost { background: transparent; border: 1px solid #3a3a42; }
+label.btn { display: block; text-align: center; position: relative; overflow: hidden; }
+.file-hidden { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.status { min-height: 1.4em; margin: 8px 0 0; font-size: 12.5px; line-height: 1.4; color: #8fd18f; word-break: break-word; }
+.status.error { color: #ff8a7a; }
+.status a { color: inherit; }
 .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .hint { font-size: 11.5px; color: #888; line-height: 1.4; margin: 8px 0 0; }
 .ed-print { padding: 14px 18px 18px; border-top: 1px solid #2a2a30; }
@@ -103,6 +108,8 @@ body {
 .brand { display: flex; align-items: center; gap: 3mm; }
 .brand img { width: 13mm; height: 13mm; object-fit: contain; }
 .brand b { display: block; font: 600 18pt/1 var(--display); letter-spacing: .08em; }
+.brand.custom img { width: 60mm; height: 16mm; object-position: left center; }
+.brand.custom > div { display: none; }
 .brand span { display: block; font-size: 8pt; color: #ddd; letter-spacing: .04em; }
 .venue-tag { font: 600 9pt var(--display); letter-spacing: .2em; text-transform: uppercase; color: #fff; border-left: .8mm solid var(--orange); padding-left: 3mm; max-width: 80mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .venue-tag.empty { display: none; }

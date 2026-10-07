@@ -45,6 +45,14 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
+  // Visible feedback in the editor; optional link node appended (used as a manual download fallback).
+  function notify(msg, isError, link) {
+    var el = $('#status');
+    el.textContent = msg;
+    el.classList.toggle('error', !!isError);
+    if (link) { el.appendChild(document.createTextNode(' ')); el.appendChild(link); }
+  }
+
   var state = { page: 1, text: {}, images: {}, logo: null };  // logo: data URL, or null for the default
   var DEFAULT_LOGO = 'assets/logos/quantum-logo.svg';
   var PROJECT_VERSION = 1;
@@ -285,10 +293,12 @@
     importImage(file).then(function (src) {
       var c = state.images[id];
       if (c.src && c.src.indexOf('blob:') === 0) URL.revokeObjectURL(c.src);
-      state.images[id] = { src: src, zoom: 1, offsetX: 0, offsetY: 0 };
+      var crop = state.images[id] = { src: src, data: null, zoom: 1, offsetX: 0, offsetY: 0 };
       $('#zoom').value = 1;
       setImageSrc(id, src);
-    }).catch(function (err) { alert(err.message); });
+      notify('Image replaced');
+      return srcToData(src).then(function (d) { crop.data = d; });
+    }).catch(function (err) { notify('Could not use that image: ' + err.message, true); });
   });
 
   $('#zoom').addEventListener('input', function (e) {
@@ -312,7 +322,20 @@
 
   function setLogo(dataUrl) {
     state.logo = dataUrl || null;
-    $$('.q-logo').forEach(function (img) { img.src = state.logo || DEFAULT_LOGO; });
+    $$('.q-logo').forEach(function (img) {
+      img.src = state.logo || DEFAULT_LOGO;
+      // A replacement logo is the complete logo/wordmark, so hide the default wordmark text.
+      img.closest('.brand').classList.toggle('custom', !!state.logo);
+    });
+  }
+
+  function readAsText(file) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(new Error('Could not read file')); };
+      r.readAsText(file);
+    });
   }
 
   function readAsDataURL(blob) {
@@ -324,41 +347,83 @@
     });
   }
 
-  $('#btnLogo').addEventListener('click', function () { $('#logoInput').click(); });
+  // File pickers are opened natively by their <label>; clearing the value first lets the same file be chosen again.
+  $('#logoInput').addEventListener('click', function (e) { e.target.value = ''; });
   $('#logoInput').addEventListener('change', function (e) {
     var file = e.target.files[0];
-    e.target.value = '';
     if (!file) return;
-    if (!/^image\/(png|jpeg|svg\+xml|webp)$/.test(file.type)) return alert('Please choose a PNG, JPG, SVG or WebP logo.');
-    readAsDataURL(file).then(setLogo).catch(function (err) { alert(err.message); });
+    var ok = /^image\/(png|jpeg|svg\+xml|webp)$/.test(file.type) || /\.(png|jpe?g|svg|webp)$/i.test(file.name);
+    if (!ok) return notify('Logo must be a PNG, JPG, SVG or WebP file.', true);
+    readAsDataURL(file).then(function (url) {
+      // Some browsers report an empty type for SVG; make sure the data URL says what it is.
+      if (/\.svg$/i.test(file.name) && !/^data:image\/svg\+xml/.test(url)) url = url.replace(/^data:[^;,]*/, 'data:image/svg+xml');
+      return new Promise(function (resolve, reject) {
+        var test = new Image();
+        test.onload = function () { resolve(url); };
+        test.onerror = function () { reject(new Error('the file could not be displayed as an image')); };
+        test.src = url;
+      });
+    }).then(function (url) {
+      setLogo(url);
+      notify('Logo replaced: ' + file.name);
+    }).catch(function (err) { notify('Could not replace logo: ' + err.message, true); });
   });
-  $('#btnLogoReset').addEventListener('click', function () { setLogo(null); });
+  $('#btnLogoReset').addEventListener('click', function () { setLogo(null); notify('Logo reset to default'); });
 
   /* ---------- Save / Load project (.quantum = JSON with embedded images) ---------- */
 
-  function srcToSaved(src) {
-    if (src.indexOf('blob:') !== 0) return Promise.resolve(src); // default asset path
+  function srcToData(src) {
     return fetch(src).then(function (r) { return r.blob(); }).then(readAsDataURL);
   }
 
+  function projectFileName() {
+    return ((state.text.venue || '').trim().replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'Quantum-Flyer') + '.quantum';
+  }
+
+  var lastSaveUrl = null;
+
+  // Builds and downloads the file synchronously so the click still counts as a user gesture (Safari).
+  function downloadProject() {
+    var images = {};
+    Object.keys(state.images).forEach(function (id) {
+      var c = state.images[id];
+      images[id] = { src: c.src.indexOf('blob:') === 0 ? c.data : c.src, zoom: c.zoom, offsetX: c.offsetX, offsetY: c.offsetY };
+    });
+    var project = { version: PROJECT_VERSION, app: 'quantum-flyer-builder', savedAt: new Date().toISOString(), text: state.text, images: images, logo: state.logo };
+    var name = projectFileName();
+    if (lastSaveUrl) URL.revokeObjectURL(lastSaveUrl);
+    // octet-stream stops Safari opening the JSON or renaming it to .json
+    lastSaveUrl = URL.createObjectURL(new Blob([JSON.stringify(project)], { type: 'application/octet-stream' }));
+    var a = document.createElement('a');
+    a.href = lastSaveUrl;
+    a.download = name;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // The URL is kept (not revoked straight away) so Safari can finish the download and the fallback link works.
+    var link = document.createElement('a');
+    link.href = lastSaveUrl;
+    link.download = name;
+    link.textContent = '(download again)';
+    notify('Project saved: ' + name, false, link);
+  }
+
   function saveProject() {
-    var ids = Object.keys(state.images);
-    return Promise.all(ids.map(function (id) { return srcToSaved(state.images[id].src); })).then(function (srcs) {
-      var images = {};
-      ids.forEach(function (id, i) {
-        var c = state.images[id];
-        images[id] = { src: srcs[i], zoom: c.zoom, offsetX: c.offsetX, offsetY: c.offsetY };
-      });
-      var project = { version: PROJECT_VERSION, app: 'quantum-flyer-builder', savedAt: new Date().toISOString(), text: state.text, images: images, logo: state.logo };
-      var name = (state.text.venue || '').trim().replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'Quantum-Flyer';
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([JSON.stringify(project)], { type: 'application/json' }));
-      a.download = name + '.quantum';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-    }).catch(function (err) { alert('Could not save project: ' + err.message); });
+    var pending = Object.keys(state.images).filter(function (id) {
+      var c = state.images[id];
+      return c.src.indexOf('blob:') === 0 && !c.data;
+    });
+    if (!pending.length) {
+      try { downloadProject(); } catch (err) { notify('Could not save project: ' + err.message, true); }
+      return;
+    }
+    // Rare: an image is still being prepared. Finish it, then offer the download as a link.
+    notify('Preparing project…');
+    Promise.all(pending.map(function (id) {
+      var c = state.images[id];
+      return srcToData(c.src).then(function (d) { c.data = d; });
+    })).then(downloadProject).catch(function (err) { notify('Could not save project: ' + err.message, true); });
   }
 
   var isNum = function (n) { return typeof n === 'number' && isFinite(n); };
@@ -396,7 +461,7 @@
         if (old.indexOf('blob:') === 0) URL.revokeObjectURL(old);
         var frame = $('.frame[data-img="' + id + '"]');
         var i = ids.indexOf(id), c = i < 0 ? null : p.images[id];
-        state.images[id] = c ? { src: srcs[i], zoom: Math.min(3, c.zoom), offsetX: c.offsetX, offsetY: c.offsetY }
+        state.images[id] = c ? { src: srcs[i], data: c.src.indexOf('data:') === 0 ? c.src : null, zoom: Math.min(3, c.zoom), offsetX: c.offsetX, offsetY: c.offsetY }
                              : { src: frame.dataset.default, zoom: 1, offsetX: 0, offsetY: 0 };
         setImageSrc(id, state.images[id].src);
       });
@@ -406,18 +471,20 @@
   }
 
   $('#btnSave').addEventListener('click', saveProject);
-  $('#btnLoad').addEventListener('click', function () { $('#projectInput').click(); });
+  $('#projectInput').addEventListener('click', function (e) { e.target.value = ''; });
   $('#projectInput').addEventListener('change', function (e) {
     var file = e.target.files[0];
-    e.target.value = '';
     if (!file) return;
-    file.text().then(function (txt) {
+    notify('Loading ' + file.name + '…');
+    readAsText(file).then(function (txt) {
       var p;
       try { p = JSON.parse(txt); } catch (err) { throw new Error('The file is not a valid project file.'); }
       var problem = validateProject(p);
       if (problem) throw new Error(problem);
       return applyProject(p);
-    }).catch(function (err) { alert('Could not load project. ' + err.message); });
+    }).then(function () {
+      notify('Project loaded: ' + file.name);
+    }).catch(function (err) { notify('Could not load project: ' + err.message, true); });
   });
 
   $('#btnPrint').addEventListener('click', function () {
